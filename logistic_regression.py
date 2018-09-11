@@ -55,8 +55,8 @@ plt.show()
 
 
 
-regr = RandomForestClassifier(n_estimators=10)
-#regr = linear_model.LogisticRegression(penalty='l1', C=10)
+#regr = RandomForestClassifier(n_estimators=10)
+regr = linear_model.LogisticRegression(penalty='l1', C=10)
 #regr = linear_model.LogisticRegression(penalty='l2', C=10)
 # regr = svm.SVC(kernel='linear', C=1)# Line
         
@@ -75,7 +75,7 @@ for train_index, test_index in kf.split(data):
 #    y2_train, y2_test = data.iloc[train_index,-2], data.iloc[test_index,-2]
     regr.fit(X_train, y_train)
     y_pred = regr.predict(X_test)
-#    coef_all[idx,:] = regr.coef_
+    coef_all[idx,:] = regr.coef_
     
     precision, recall, thresholds = precision_recall_curve(y_test, y_pred)
     #https://towardsdatascience.com/what-metrics-should-we-use-on-imbalanced-data-set-precision-recall-roc-e2e79252aeba
@@ -89,7 +89,8 @@ for train_index, test_index in kf.split(data):
     # =============================================================================
     # ROC
     # =============================================================================
-    fpr, tpr, thresholds = roc_curve(y_test, y_pred)
+    y_pred_proba = regr.predict_proba(X_test)[:,1]
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
     roc_auc.append(auc(fpr, tpr))
     
     # =============================================================================
@@ -107,22 +108,23 @@ for train_index, test_index in kf.split(data):
 #    plt.title('2-class Precision-Recall curve: AP={0:0.2f}'.format(
 #              precision_score(y_test, y_pred)))
 #    
-#    # =============================================================================
-#    # ROC curve
-#    # =============================================================================
-#    
-#    plt.figure()
-#    lw = 2
-#    plt.plot(fpr, tpr, color='darkorange',
-#             lw=lw, label='ROC curve (area = %0.2f)' % auc(fpr, tpr))
-#    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
-#    plt.xlim([0.0, 1.0])
-#    plt.ylim([0.0, 1.05])
-#    plt.xlabel('False Positive Rate')
-#    plt.ylabel('True Positive Rate')
-#    plt.title('Receiver operating characteristic example')
-#    plt.legend(loc="lower right")
-#    plt.show()
+    # =============================================================================
+    # ROC curve
+    # =============================================================================
+    
+    plt.figure()
+    lw = 2
+    plt.plot(fpr, tpr, color='darkorange',
+             lw=lw, label='ROC curve (area = %0.2f)' % auc(fpr, tpr))
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver operating characteristic example')
+    plt.legend(loc="lower right")
+    plt.show()
+    
 
 
 roc_auc_averaged = np.mean(roc_auc)
@@ -133,3 +135,4 @@ print('Average precision score: {0:0.2f}'.format(np.mean(average_precision)))
 print('Average recall score: {0:0.2f}'.format(np.mean(average_recall)))
         
 coef_mean = np.mean(coef_all,0)
+print(colnames[1:8])
