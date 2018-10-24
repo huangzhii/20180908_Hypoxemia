@@ -407,18 +407,53 @@ alldata.imputed.shrinked$HOURS = hours
 # times[length(times)] - times[1]
 # as.numeric(anytime(c("2150-11-01 00:00:00","2150-11-01 01:00:00")))/3600 # bug exists in R
 
+data$RESPIRATORY_FAILURE[data$PO2 >= 60 & data$PCO2 <= 50] = "Normal"
+data$RESPIRATORY_FAILURE[data$PO2 >= 60 & data$PCO2 >  50] = "High_PCO2"
+data$RESPIRATORY_FAILURE[data$PO2 <  60 & data$PCO2 <  50] = "Respiratory_Failure_I"
+data$RESPIRATORY_FAILURE[data$PO2 <  60 & data$PCO2 >  50] = "Respiratory_Failure_II"
+
 
 setwd("/home/zhihuan/Downloads/Hypoxemia - LSTM/PO2data/PO2数据/")
 write.csv(alldata.imputed.shrinked, file = "expanded.all.data.merged.imputed.calculated.shrinked.csv", row.names = F)
 
+
+
+
+####################################################################
+####################################################################
+####################################################################
+####################################################################
+####################################################################
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/PO2data/PO2数据/")
+
 ### Find significant features
 data = read.csv("expanded.all.data.merged.imputed.calculated.shrinked.csv", header = T, stringsAsFactors = F)
-HYPOXEMIA_CLASS = data$HYPOXEMIA_CLASS
 
+HYPOXEMIA_CLASS = data$HYPOXEMIA_CLASS
+data = data.frame(data)
+
+data$HYPOXEMIA_CLASS[data$HYPOXEMIA_CLASS == "Normal"] = 1
+data$HYPOXEMIA_CLASS[data$HYPOXEMIA_CLASS == "Mild"] = 2
+data$HYPOXEMIA_CLASS[data$HYPOXEMIA_CLASS == "Morderate"] = 3
+data$HYPOXEMIA_CLASS[data$HYPOXEMIA_CLASS == "Severe"] = 4
+data$GENDER[data$GENDER == "M"] = 1
+data$GENDER[data$GENDER == "F"] = 2
+
+data2 = data[data$HYPOXEMIA_CLASS <= 2, ]
+data3 = data2[1:10000, c("AGE","GENDER","K","NA.","HOURS","HYPOXEMIA_CLASS")]
+data4 = as.numeric(as.matrix(data3))
+data5 = matrix(data4, ncol = 6)
+res = as.data.frame(cor(data5, method="spearman"))
+data5 = data.frame(data5)
+colnames(data5) = c("AGE","GENDER","K","NA.","HOURS","HYPOXEMIA_CLASS")
+
+colnames(data)
 
 results <- list()
-for(i in colnames(group1)[c(-1,-2,-3,-6,-7,-10,-40)]){
-  aov_res <- aov(formula(paste("PT_prev_6_average", "~ HYPOXEMIA_CLASS")), data = data)
-  unlist(summary(aov_res))[9]
+for(i in colnames(data)[c(-1,-2,-3,-6,-7,-10,-40)]){
+  print(i)
+  aov_res <- kruskal.test(formula(paste(i, "~ HYPOXEMIA_CLASS")), data = data2)
+  # aov_res <- aov(formula(paste(i, "~ HYPOXEMIA_CLASS")), data = data2)
+  print(unlist(summary(aov_res)))
 }
 
