@@ -1,22 +1,12 @@
-setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/PO2data/PO2数据/总人群")
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2/总人群")
 library(anytime)
 library(tictoc)
 ###########################################################
 ###            Expand data
 ###########################################################
-nonvent = read.csv("mimic_mimiciii_po2_nonvent_bmi.csv", header = F, stringsAsFactors = F)
-vent = read.csv("mimic_mimiciii_po2_vent_bmi.csv", header = F, stringsAsFactors = F)
-label = levels(unlist(read.table("label.tsv", sep = "\t")))
-vent = vent[,-11]
-colnames(nonvent) = label
-colnames(vent) = label
-
-nonvent$`is_vent` = 0
-vent$`is_vent` = 1
-
-
-alldata = rbind(vent, nonvent)
-
+alldata = read.csv("mimic_mimiciii_fio2_hy_final_bmi.csv", header = F, stringsAsFactors = F)
+label = levels(unlist(read.table("label.tsv.txt", sep = "\t")))
+colnames(alldata) = label
 
 alldata$ADMI_TIME = anytime(alldata$ADMI_TIME)
 alldata$OUT_TIME = anytime(alldata$OUT_TIME)
@@ -66,7 +56,7 @@ times = as.character(anytime(currtime_list2))
 alldata.expanded$CURR_TIME = times
 
 write.csv(alldata.expanded, file = "expanded.all.data.csv", row.names = F)
-setwd("/home/zhihuan/Downloads/Hypoxemia - LSTM/PO2data/PO2数据/总人群")
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2")
 alldata.expanded = read.csv("expanded.all.data.csv", header = T)
 
 
