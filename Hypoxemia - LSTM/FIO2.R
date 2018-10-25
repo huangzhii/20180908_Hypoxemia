@@ -1,6 +1,7 @@
 setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2/总人群")
 library(anytime)
 library(tictoc)
+library(lubridate)
 ###########################################################
 ###            Expand data
 ###########################################################
@@ -32,7 +33,7 @@ for (i in 1:dim(alldata)[1]){
 }
 alldata$hours = hourslist
 # expand
-alldata.expanded <- alldata[rep(row.names(alldata), alldata$hours), 1:14]
+alldata.expanded <- alldata[rep(row.names(alldata), alldata$hours), 1:13]
 
 start_time <- proc.time()
 currtime_list = NULL
@@ -55,58 +56,55 @@ times = as.character(anytime(currtime_list2))
 
 alldata.expanded$CURR_TIME = times
 
-write.csv(alldata.expanded, file = "expanded.all.data.csv", row.names = F)
 setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2")
-alldata.expanded = read.csv("expanded.all.data.csv", header = T)
+# write.csv(alldata.expanded, file = "expanded.all.data.csv", row.names = F)
+save(alldata.expanded, file = "expanded.all.data.Rdata")
+
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2")
+# alldata.expanded = read.csv("expanded.all.data.csv", header = T)
+load("expanded.all.data.Rdata")
 
 
 ###########################################################
 ###             merge 生命体征
 ###########################################################
-setwd("/home/zhihuan/Downloads/Hypoxemia - LSTM/PO2data/PO2数据/生命体征")
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2/生命体征")
 library(dplyr)
 library(anytime)
 
-hy_vit3_1 = read.csv("mimic_mimiciii_hy_vit3_1.csv", header = F, stringsAsFactors = F)
-hy_vit3_2 = read.csv("mimic_mimiciii_hy_vit3_2.csv", header = F, stringsAsFactors = F)
+hy_vit3_1 = read.csv("mimic_mimiciii_hy_vit2_part1.csv", header = F, stringsAsFactors = F)
+hy_vit3_2 = read.csv("mimic_mimiciii_hy_vit2_part2.csv", header = F, stringsAsFactors = F)
 label = as.character(unlist(t(read.table("vit_label.tsv.txt", sep = "\t"))))
 colnames(hy_vit3_1) = label
 colnames(hy_vit3_2) = label
 
-hy_vit3_1$IS_VENT_VITSIGN = 1
-hy_vit3_2$IS_VENT_VITSIGN = 0
 hy_vit3 = rbind(hy_vit3_1, hy_vit3_2)
 hy_vit3$VIT_TIME = as.character(anytime(hy_vit3$VIT_TIME))
 
 alldata.expanded$mergekey = paste0(alldata.expanded$ICUSTAY_ID, "_", alldata.expanded$CURR_TIME)
 hy_vit3$mergekey = paste0(hy_vit3$ICUSTAY_ID, "_", hy_vit3$VIT_TIME)
 alldata.merged = full_join(alldata.expanded, hy_vit3,
-                            by = 'mergekey')
+                           by = 'mergekey')
 alldata.merged <- alldata.merged[!duplicated(alldata.merged$mergekey),]
 
 ###########################################################
 ###             merge 实验室检查
 ###########################################################
-setwd("/home/zhihuan/Downloads/Hypoxemia - LSTM/PO2data/PO2数据/实验室检查")
-hy_lab3_1 = read.csv("mimic_mimiciii_hy_lab3_1.csv", header = F, stringsAsFactors = F)
-hy_lab3_2 = read.csv("mimic_mimiciii_hy_lab3_2.csv", header = F, stringsAsFactors = F)
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2/实验室检查")
+hy_lab3 = read.csv("mimic_mimiciii_hy_lab2.csv", header = F, stringsAsFactors = F)
 label = as.character(unlist(t(read.table("LAB_LABEL.TSV.txt", sep = "\t"))))
-colnames(hy_lab3_1) = label
-colnames(hy_lab3_2) = label
-hy_lab3_1$IS_VENT_LAB = 1
-hy_lab3_2$IS_VENT_LAB = 0
-hy_lab3 = rbind(hy_lab3_1, hy_lab3_2)
+colnames(hy_lab3) = label
 hy_lab3$LAB_TIME = as.character(anytime(hy_lab3$LAB_TIME))
 hy_lab3$mergekey = paste0(hy_lab3$ICUSTAY_ID, "_", hy_lab3$LAB_TIME)
 
 alldata.merged = full_join(alldata.merged, hy_lab3,
-                            by = 'mergekey')
+                           by = 'mergekey')
 alldata.merged <- alldata.merged[!duplicated(alldata.merged$mergekey),]
 
 ###########################################################
 ###             merge 入量
 ###########################################################
-setwd("/home/zhihuan/Downloads/Hypoxemia - LSTM/PO2data/PO2数据/入量")
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2/入量")
 hy_input_3_1 = read.csv("mimic_mimiciii_hy_input_3_1.csv", header = F, stringsAsFactors = F)
 hy_input_3_2 = read.csv("mimic_mimiciii_hy_input_3_2.csv", header = F, stringsAsFactors = F)
 label = as.character(unlist(t(read.table("input_label.tsv.txt", sep = "\t"))))
@@ -119,13 +117,13 @@ hy_input$INPUT_CHARTTIME = as.character(anytime(hy_input$INPUT_CHARTTIME))
 hy_input$mergekey = paste0(hy_input$ICUSTAY_ID, "_", hy_input$INPUT_CHARTTIME)
 
 alldata.merged = full_join(alldata.merged, hy_input,
-                            by = 'mergekey')
+                           by = 'mergekey')
 alldata.merged <- alldata.merged[!duplicated(alldata.merged$mergekey),]
 
 ###########################################################
 ###             merge 出量
 ###########################################################
-setwd("/home/zhihuan/Downloads/Hypoxemia - LSTM/PO2data/PO2数据/出量")
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2/出量")
 hy_output_3_1 = read.csv("mimic_mimiciii_hy_output3_1.csv", header = F, stringsAsFactors = F)
 hy_output_3_2 = read.csv("mimic_mimiciii_hy_output3_2.csv", header = F, stringsAsFactors = F)
 label = as.character(unlist(t(read.table("outputlabel.tsv.txt", sep = "\t"))))
@@ -138,13 +136,13 @@ hy_output$OUT_CHARTTIME = as.character(anytime(hy_output$OUT_CHARTTIME))
 hy_output$mergekey = paste0(hy_output$ICUSTAY_ID, "_", hy_output$OUT_CHARTTIME)
 
 alldata.merged = full_join(alldata.merged, hy_output,
-                            by = 'mergekey')
+                           by = 'mergekey')
 alldata.merged <- alldata.merged[!duplicated(alldata.merged$mergekey),]
 
 ###########################################################
 ###             merge 氧疗
 ###########################################################
-setwd("/home/zhihuan/Downloads/Hypoxemia - LSTM/PO2data/PO2数据/氧疗")
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2/氧疗")
 oxygentherapy = read.csv("mimic_mimiciii_oxygentherapy3.csv", header = F, stringsAsFactors = F)
 label = as.character(unlist(t(read.table("oxygen_label.tsv.txt", sep = "\t"))))
 colnames(oxygentherapy) = label
@@ -153,7 +151,7 @@ oxygentherapy$OXYGEN_CHARTTIME = as.character(anytime(oxygentherapy$OXYGEN_CHART
 oxygentherapy$mergekey = paste0(oxygentherapy$ICUSTAY_ID, "_", oxygentherapy$OXYGEN_CHARTTIME)
 
 alldata.merged = full_join(alldata.merged, oxygentherapy,
-                            by = 'mergekey')
+                           by = 'mergekey')
 alldata.merged <- alldata.merged[!duplicated(alldata.merged$mergekey),]
 alldata.merged$OXYGEN[is.na(alldata.merged$OXYGEN)] = 0
 
@@ -161,7 +159,7 @@ alldata.merged$OXYGEN[is.na(alldata.merged$OXYGEN)] = 0
 ###########################################################
 ###             merge 动脉血气
 ###########################################################
-setwd("/home/zhihuan/Downloads/Hypoxemia - LSTM/PO2data/PO2数据/动脉血气")
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2/动脉血气")
 hy_abg_3_1 = read.csv("mimic_mimiciii_hy_abg_3_1.csv", header = F, stringsAsFactors = F)
 hy_abg_3_2 = read.csv("mimic_mimiciii_hy_abg_3_2.csv", header = F, stringsAsFactors = F)
 label = as.character(unlist(t(read.table("ABG_LABLE.TSV.txt", sep = "\t"))))
@@ -174,7 +172,7 @@ hy_abg$ABG_TIME = as.character(anytime(hy_abg$ABG_TIME))
 hy_abg$mergekey = paste0(hy_abg$ICUSTAY_ID, "_", hy_abg$ABG_TIME)
 
 alldata.merged = full_join(alldata.merged, hy_abg,
-                            by = 'mergekey')
+                           by = 'mergekey')
 alldata.merged <- alldata.merged[!duplicated(alldata.merged$mergekey),]
 colnames(alldata.merged)
 
@@ -191,7 +189,7 @@ alldata.merged2 = alldata.merged[, c("ICUSTAY_ID.x","SUBJECT_ID.x","HADM_ID.x",
                                      "WBC","RBC","NEU","HEMATOCRIT","PLT","CRP",
                                      "BICARBONATE","ALT","AST","ALB","TOTALBILIRUBIN","TNT",
                                      "CK","CKMB","CR","UN","AMI","LIP",
-                                     "BNP","CL","GLU","K","NA+","APTT",
+                                     "BNP","CL","GLU","K","NA_ION","APTT",
                                      "PT","INR","DD","FIB","INPUT","OUTPUT","OXYGEN","FIO2","PCO2","PO2")]
 colnames(alldata.merged2)[1:3] = c("ICUSTAY_ID","SUBJECT_ID","HADM_ID")
 colnames(alldata.merged2)
@@ -205,16 +203,14 @@ index2sort = paste0(alldata.merged2$ICUSTAY_ID, "_", alldata.merged2$CURR_TIME)
 order = sort.int(index2sort, index.return = T)$ix
 alldata.merged2 = alldata.merged2[order,]
 
-# setwd("/home/zhihuan/Downloads/Hypoxemia - LSTM/PO2data/PO2数据/")
-# write.csv(alldata.merged2, file = "expanded.all.data.merged.csv", row.names = F)
-alldata.merged2 = read.csv(file = "expanded.all.data.merged.csv", header = T, stringsAsFactors = F)
-
-
-colnames(alldata.merged2)
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2")
+save(alldata.merged2, file = "expanded.all.data.merged.Rdata")
 
 ###########################################################
 ###             Fill missing values
 ###########################################################
+load("expanded.all.data.merged.Rdata")
+colnames(alldata.merged2)
 library(zoo)
 alldata.merged2[is.na(alldata.merged2$INPUT), "INPUT"] = 0
 alldata.merged2[is.na(alldata.merged2$OUTPUT), "OUTPUT"] = 0
@@ -260,15 +256,16 @@ alldata.merged3[, columns2impute] = total.impute
 alldata.merged3 = alldata.merged3[alldata.merged3$SUBJECT_ID != -Inf,]
 alldata.merged3[alldata.merged3 == -Inf] = NA
 
-setwd("/home/zhihuan/Downloads/Hypoxemia - LSTM/PO2data/PO2数据/")
-write.csv(alldata.merged3, file = "expanded.all.data.merged.imputed.csv", row.names = F)
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2")
+save(alldata.merged3, file = "expanded.all.data.merged.imputed.Rdata")
 
 ###########################################################
 ###             Sliding window add labels
 ###########################################################
 require(zoo)
-setwd("/home/zhihuan/Downloads/Hypoxemia - LSTM/PO2data/PO2数据/")
-alldata.imputed = read.csv("expanded.all.data.merged.imputed.csv", header = T, stringsAsFactors = F)
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2")
+load("expanded.all.data.merged.imputed.Rdata")
+alldata.imputed = alldata.merged3
 colnames(alldata.imputed)
 
 alldata.imputed$HYPOXEMIA_CLASS = NA
@@ -325,12 +322,12 @@ alldata.imputed$FLUID_BALANCE = INPUT.sum - OUTPUT.sum
 VIT_n_LAB_names = c("DIAS_BP","HR","SYS_BP","MEAN_BP","RESPRATE","TEMPERATURE","SPO2",
                     "PH","CA","HCO3","HEMOGLOBIN","WBC","RBC","NEU","HEMATOCRIT","PLT",
                     "CRP","BICARBONATE","ALT","AST","ALB","TOTALBILIRUBIN","TNT","CK",
-                    "CKMB","CR","UN","AMI","LIP","BNP","CL","GLU","K","NA.","APTT",
+                    "CKMB","CR","UN","AMI","LIP","BNP","CL","GLU","K","NA_ION","APTT",
                     "PT","INR","DD","FIB")
 VIT_n_LAB = zoo(alldata.imputed[,VIT_n_LAB_names])
 VIT_n_LAB.average <- rollapply(VIT_n_LAB, width = 6, by = 1, FUN = mean, na.rm = TRUE, align = "left") # This step costs up to an hour!
 VIT_n_LAB.average = data.frame(VIT_n_LAB.average)
-# save(VIT_n_LAB.average, file = "VIT_n_LAB.average.Rdata")
+save(VIT_n_LAB.average, file = "VIT_n_LAB.average.Rdata")
 load("VIT_n_LAB.average.Rdata")
 
 emptymat = data.frame(matrix(NA, nrow=6,ncol=length(VIT_n_LAB_names)))
@@ -340,15 +337,15 @@ VIT_n_LAB.average[values2NA, ] = NA
 VIT_n_LAB_newnames = paste0(VIT_n_LAB_names, "_prev_6_average")
 alldata.imputed[,VIT_n_LAB_newnames] = VIT_n_LAB.average
 
-setwd("/home/zhihuan/Downloads/Hypoxemia - LSTM/PO2data/PO2数据/")
-write.csv(alldata.imputed, file = "expanded.all.data.merged.imputed.calculated.csv", row.names = F)
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2")
+save(alldata.imputed, file = "expanded.all.data.merged.imputed.calculated.Rdata")
 
 
 ###########################################################
 ### Drop some columns, make complete table
 ###########################################################
-setwd("/home/zhihuan/Downloads/Hypoxemia - LSTM/PO2data/PO2数据/")
-alldata.imputed = read.csv("expanded.all.data.merged.imputed.calculated.csv", header = T, stringsAsFactors = F)
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2")
+load("expanded.all.data.merged.imputed.calculated.Rdata")
 colnames(alldata.imputed)
 
 droplist = NULL
@@ -356,7 +353,7 @@ droplist = c("HEIGHT","WEIGHT","BMI")
 remains = NULL
 for (i in 1:dim(alldata.imputed)[2]){
   message(colnames(alldata.imputed)[i], "\t", sum(is.na(alldata.imputed[,i])) )
-  if (sum(is.na(alldata.imputed[,i])) > 3000000){
+  if (sum(is.na(alldata.imputed[,i])) > 1050000){
     droplist = c(droplist, colnames(alldata.imputed)[i])
   }
   else {
@@ -403,7 +400,7 @@ data$RESPIRATORY_FAILURE[data$PO2 <  60 & data$PCO2 <  50] = "Respiratory_Failur
 data$RESPIRATORY_FAILURE[data$PO2 <  60 & data$PCO2 >  50] = "Respiratory_Failure_II"
 
 
-setwd("/home/zhihuan/Downloads/Hypoxemia - LSTM/PO2data/PO2数据/")
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2")
 write.csv(alldata.imputed.shrinked, file = "expanded.all.data.merged.imputed.calculated.shrinked.csv", row.names = F)
 
 
@@ -414,7 +411,7 @@ write.csv(alldata.imputed.shrinked, file = "expanded.all.data.merged.imputed.cal
 ####################################################################
 ####################################################################
 ####################################################################
-setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/PO2data/PO2数据/")
+setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2")
 
 ### Find significant features
 data = read.csv("expanded.all.data.merged.imputed.calculated.shrinked.csv", header = T, stringsAsFactors = F)
@@ -424,7 +421,7 @@ data = data.frame(data)
 
 data$HYPOXEMIA_CLASS[data$HYPOXEMIA_CLASS == "Normal"] = 1
 data$HYPOXEMIA_CLASS[data$HYPOXEMIA_CLASS == "Mild"] = 2
-data$HYPOXEMIA_CLASS[data$HYPOXEMIA_CLASS == "Morderate"] = 3
+data$HYPOXEMIA_CLASS[data$HYPOXEMIA_CLASS == "Moderate"] = 3
 data$HYPOXEMIA_CLASS[data$HYPOXEMIA_CLASS == "Severe"] = 4
 data$GENDER[data$GENDER == "M"] = 1
 data$GENDER[data$GENDER == "F"] = 2
