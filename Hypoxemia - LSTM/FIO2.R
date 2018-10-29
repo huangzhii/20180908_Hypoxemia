@@ -105,14 +105,9 @@ alldata.merged <- alldata.merged[!duplicated(alldata.merged$mergekey),]
 ###             merge 入量
 ###########################################################
 setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2/入量")
-hy_input_3_1 = read.csv("mimic_mimiciii_hy_input_3_1.csv", header = F, stringsAsFactors = F)
-hy_input_3_2 = read.csv("mimic_mimiciii_hy_input_3_2.csv", header = F, stringsAsFactors = F)
+hy_input = read.csv("mimic_mimiciii_hy_input_2.csv", header = F, stringsAsFactors = F)
 label = as.character(unlist(t(read.table("input_label.tsv.txt", sep = "\t"))))
-colnames(hy_input_3_1) = label
-colnames(hy_input_3_2) = label
-hy_input_3_1$IS_VENT_INPUT = 1
-hy_input_3_2$IS_VENT_INPUT = 0
-hy_input = rbind(hy_input_3_1, hy_input_3_2)
+colnames(hy_input) = label
 hy_input$INPUT_CHARTTIME = as.character(anytime(hy_input$INPUT_CHARTTIME))
 hy_input$mergekey = paste0(hy_input$ICUSTAY_ID, "_", hy_input$INPUT_CHARTTIME)
 
@@ -124,14 +119,9 @@ alldata.merged <- alldata.merged[!duplicated(alldata.merged$mergekey),]
 ###             merge 出量
 ###########################################################
 setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2/出量")
-hy_output_3_1 = read.csv("mimic_mimiciii_hy_output3_1.csv", header = F, stringsAsFactors = F)
-hy_output_3_2 = read.csv("mimic_mimiciii_hy_output3_2.csv", header = F, stringsAsFactors = F)
+hy_output = read.csv("mimic_mimiciii_hy_output2.csv", header = F, stringsAsFactors = F)
 label = as.character(unlist(t(read.table("outputlabel.tsv.txt", sep = "\t"))))
-colnames(hy_output_3_1) = label
-colnames(hy_output_3_2) = label
-hy_output_3_1$IS_VENT_OUTPUT = 1
-hy_output_3_2$IS_VENT_OUTPUT = 0
-hy_output = rbind(hy_output_3_1, hy_output_3_2)
+colnames(hy_output) = label
 hy_output$OUT_CHARTTIME = as.character(anytime(hy_output$OUT_CHARTTIME))
 hy_output$mergekey = paste0(hy_output$ICUSTAY_ID, "_", hy_output$OUT_CHARTTIME)
 
@@ -146,7 +136,7 @@ setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO
 oxygentherapy = read.csv("mimic_mimiciii_oxygentherapy3.csv", header = F, stringsAsFactors = F)
 label = as.character(unlist(t(read.table("oxygen_label.tsv.txt", sep = "\t"))))
 colnames(oxygentherapy) = label
-oxygentherapy$IS_VENT_OXYGEN = 0
+oxygentherapy$IS_VENT_OXYGEN = 1
 oxygentherapy$OXYGEN_CHARTTIME = as.character(anytime(oxygentherapy$OXYGEN_CHARTTIME))
 oxygentherapy$mergekey = paste0(oxygentherapy$ICUSTAY_ID, "_", oxygentherapy$OXYGEN_CHARTTIME)
 
@@ -160,14 +150,9 @@ alldata.merged$OXYGEN[is.na(alldata.merged$OXYGEN)] = 0
 ###             merge 动脉血气
 ###########################################################
 setwd("/home/zhihuan/Documents/Cong_Feng/20180908_Hypoxemia/Hypoxemia - LSTM/FIO2/动脉血气")
-hy_abg_3_1 = read.csv("mimic_mimiciii_hy_abg_3_1.csv", header = F, stringsAsFactors = F)
-hy_abg_3_2 = read.csv("mimic_mimiciii_hy_abg_3_2.csv", header = F, stringsAsFactors = F)
+hy_abg = read.csv("mimic_mimiciii_arterial_bloodgas2.csv", header = F, stringsAsFactors = F)
 label = as.character(unlist(t(read.table("ABG_LABLE.TSV.txt", sep = "\t"))))
-colnames(hy_abg_3_1) = label
-colnames(hy_abg_3_2) = label
-hy_abg_3_1$IS_VENT_ABG = 1
-hy_abg_3_2$IS_VENT_ABG = 0
-hy_abg = rbind(hy_abg_3_1, hy_abg_3_2)
+colnames(hy_abg) = label
 hy_abg$ABG_TIME = as.character(anytime(hy_abg$ABG_TIME))
 hy_abg$mergekey = paste0(hy_abg$ICUSTAY_ID, "_", hy_abg$ABG_TIME)
 
@@ -182,10 +167,8 @@ colnames(alldata.merged)
 
 alldata.merged2 = alldata.merged[, c("ICUSTAY_ID.x","SUBJECT_ID.x","HADM_ID.x",
                                      "AGE","LOS","INTIME","OUTTIME","GENDER","HEIGHT","WEIGHT",
-                                     "BMI","is_vent","CURR_TIME",
-                                     "DIAS_BP","HR","SYS_BP","MEAN_BP",
-                                     "RESPRATE","TEMPERATURE","SPO2",
-                                     "PH","CA","HCO3","HEMOGLOBIN",
+                                     "BMI","CURR_TIME","DIAS_BP","HR","SYS_BP","MEAN_BP",
+                                     "RESPRATE","TEMPERATURE","SPO2","PH","CA","HCO3","HEMOGLOBIN",
                                      "WBC","RBC","NEU","HEMATOCRIT","PLT","CRP",
                                      "BICARBONATE","ALT","AST","ALB","TOTALBILIRUBIN","TNT",
                                      "CK","CKMB","CR","UN","AMI","LIP",
@@ -216,7 +199,7 @@ alldata.merged2[is.na(alldata.merged2$INPUT), "INPUT"] = 0
 alldata.merged2[is.na(alldata.merged2$OUTPUT), "OUTPUT"] = 0
 # is.na(alldata.merged2$FIO2)
 icustayIDlist = unique(alldata.merged2$ICUSTAY_ID)
-columns2impute = colnames(alldata.merged2)[c(14:52,55:58)]
+columns2impute = colnames(alldata.merged2)[c(14:51,54:57)]
 
 # start_time <- proc.time()
 # for (i in 1:length(icustayIDlist)){
